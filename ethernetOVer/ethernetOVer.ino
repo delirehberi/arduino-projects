@@ -11,12 +11,17 @@
  */
 #include <SPI.h>
 #include <Ethernet.h>
-#include <string.h>
+#include <string.h> 
+
+int ldr_sensor = A0;
+int ldr_sensor_value = 0;
+
+
 byte mac[] = {0xDE, 0xEF, 0xBE, 0xED, 0x10, 0xAB};
 
-byte server[] = {192, 168, 1, 64};
+byte server[] = {192, 168, 1, 94};
 int serverPort = 3000;
-IPAddress ip(192, 168, 1, 54);
+IPAddress ip(192, 168, 1, 34);
 IPAddress myDns(192, 168, 1, 1);
 
 EthernetClient client;
@@ -30,23 +35,23 @@ void setup() {
   pinMode(2, INPUT); //button
   pinMode(8, OUTPUT); // led
 
-  Serial.println("Initializing ethernet with DHCP!");
+  //Serial.println("Initializing ethernet with DHCP!");
   if (Ethernet.begin(mac) == 0) {
-    Serial.println("Failed to configure Ethernet with DHCP");
+    //Serial.println("Failed to configure Ethernet with DHCP");
     if (Ethernet.hardwareStatus() == EthernetNoHardware ) {
-      Serial.println("Plug the shield!");
+      //Serial.println("Plug the shield!");
       while (true) {
         delay(1);
       }
     }
 
     if (Ethernet.linkStatus() == LinkOFF) {
-      Serial.println("Plug the cable. IDIOT!");
+      //Serial.println("Plug the cable. IDIOT!");
     }
 
     Ethernet.begin(mac, ip, myDns);
   } else {
-    Serial.print("Configured!: ");
+    //Serial.print("Configured!: ");
     Serial.print(Ethernet.localIP());
   }
   delay(1000);
@@ -54,16 +59,18 @@ void setup() {
 
 }
 
-void loop() {
-  buttonState = digitalRead(2);
-  if (buttonState == HIGH) {
-    Serial.println("Connecting to remote page");
+void loop() { 
+  ldr_sensor_value = analogRead(ldr_sensor); 
+  Serial.println(ldr_sensor_value); 
+  if (ldr_sensor_value > 800) {
+    //Serial.println("Connecting to remote page");
     int connection = client.connect(server, serverPort);
     if (connection == 1) {
       String HTTP_METHOD = "GET";
       String HTTP_URL = "/";
+      String HTTP_QUERY_STRING=String("?data=") + String(ldr_sensor_value);
       String HTTP_PROTOCOL = "HTTP/1.1";
-      String URL = HTTP_METHOD + " " + HTTP_URL + " " + HTTP_PROTOCOL;
+      String URL = HTTP_METHOD + " " + HTTP_URL + HTTP_QUERY_STRING + " " + HTTP_PROTOCOL;
 
       //Serial.println("URL: " + URL);
 
@@ -72,23 +79,23 @@ void loop() {
       client.println("Connection.close");
       client.println();
     } else {
-      Serial.println("Connection failed!");
+      //Serial.println("Connection failed!");
       switch (connection) {
         case -1:
-          Serial.println("Timeout");
+          //Serial.println("Timeout");
           break;
         case -2:
-          Serial.println("InvalidServer");
+          //Serial.println("InvalidServer");
           break;
         case -3:
-          Serial.println("Truncated");
+          //Serial.println("Truncated");
           break;
         case -4:
-          Serial.println("InvalidResponse");
+          //Serial.println("InvalidResponse");
           break;
         default:
-          Serial.println("No reason");
-          Serial.println(connection);
+          //Serial.println("No reason");
+          //Serial.println(connection);
           break;
       }
     }
@@ -96,14 +103,14 @@ void loop() {
   } else {
   }
 
-  int len = client.available();
-  if (len > 0 ) {
-    byte buffer[80];
-    if (len > 80) len = 80;
-    client.read(buffer, len);
-    Serial.write(buffer, len);
-    byteCount = byteCount + len;
-  }
+  //int len = client.available();
+  //if (len > 0 ) {
+  //  byte buffer[80];
+  //  if (len > 80) len = 80;
+  //  client.read(buffer, len);
+  //  Serial.write(buffer, len);
+  //  byteCount = byteCount + len;
+  //}
 
   //if (!client.connected()) {
   //  Serial.println();
@@ -115,4 +122,5 @@ void loop() {
   //    delay(1);
   //  }
   //}
+  delay(500);
 }
